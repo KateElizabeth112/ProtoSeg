@@ -13,10 +13,11 @@ from UNet import UNet
 
 # set up variables
 NUM_CONV_LAYERS = 7
-BATCH_SIZE = 2
+BATCH_SIZE = 6
 NUM_WORKERS = 2
 INIT_LEARNING_RATE = 3e-4
 TRAIN_PROP = 0.8
+MODEL_NAME = "unet_v2"
 
 # Set up directories and filenames
 root_dir = '/Users/katecevora/Documents/PhD/data/btcv'
@@ -33,7 +34,7 @@ else:
 
 
 def train(train_loader, valid_loader, name):
-    epochs = 50
+    epochs = 100
     av_train_error = []
     av_train_dice = []
     av_valid_error = []
@@ -146,8 +147,7 @@ def main():
     train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, TRAIN_PROP, BATCH_SIZE, NUM_WORKERS)
 
     # Train the network
-    model_name = "unet_v1"
-    train(train_loader, valid_loader, model_name)
+    train(train_loader, valid_loader, MODEL_NAME)
 
     # Evaluate saved model
     #evaluate(test_loader)
