@@ -23,9 +23,9 @@ args = vars(parser.parse_args())
 
 # set up variables
 NUM_CONV_LAYERS = 7
-BATCH_SIZE = args['batch_size']
+BATCH_SIZE = int(args['batch_size'])
 NUM_WORKERS = 2
-NUM_EPOCHS = args['num_epochs']
+NUM_EPOCHS = int(args['num_epochs'])
 INIT_LEARNING_RATE = 3e-4
 TRAIN_PROP = 0.8
 MODEL_NAME = args['model_name']
