@@ -8,7 +8,7 @@
 #SBATCH --output=slurm.%N.%j.log # Standard output and error log
 
 # Source virtual environment (pip)
-source /vol/biomedic3/kc2322/env/activate
+source /vol/biomedic3/kc2322/env/bin/activate
 
 # Run python script
 python3 main.py -m "unet_v3" -b 6 -n 50 -s True
