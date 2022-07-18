@@ -11,4 +11,4 @@
 source /vol/biomedic3/kc2322/env/activate
 
 # Run python script
-python3 main.py
+python3 main.py -m "unet_v3" -b 6 -n 50 -s True

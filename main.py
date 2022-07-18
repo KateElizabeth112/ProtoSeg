@@ -1,3 +1,4 @@
+import argparse
 import os
 import torch
 import torch.nn as nn
@@ -11,16 +12,30 @@ from dataset import create_dataset
 from loss import get_dice_per_class, dice_coeff
 from UNet import UNet
 
+# argparse
+parser = argparse.ArgumentParser(description="Just an example",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-b", "--batch_size", default=2, help="Size of UNet training batch.")
+parser.add_argument("-n", "--num_epochs", default=10, help="Number of training epochs.")
+parser.add_argument("-m", "--model_name", default="unet", help="Name of the model to be saved")
+parser.add_argument("-s", "--slurm", default=False, help="Running on SLURM")
+args = vars(parser.parse_args())
+
 # set up variables
 NUM_CONV_LAYERS = 7
-BATCH_SIZE = 6
+BATCH_SIZE = args['batch_size']
 NUM_WORKERS = 2
+NUM_EPOCHS = args['num_epochs']
 INIT_LEARNING_RATE = 3e-4
 TRAIN_PROP = 0.8
-MODEL_NAME = "unet_v2"
+MODEL_NAME = args['model_name']
+SLURM = args['slurm']
 
 # Set up directories and filenames
-root_dir = '/Users/katecevora/Documents/PhD/data/btcv'
+if SLURM:
+    root_dir ='/vol/biomedic3/kc2322/data/btcv'
+else:
+    root_dir = '/Users/katecevora/Documents/PhD/data/btcv'
 data_dir = os.path.join(root_dir, 'nnUNet_raw_data_base/nnUNet_raw_data/Task500_BTCV')
 images_dir = os.path.join(data_dir, "imagesTr")
 labels_dir = os.path.join(data_dir, "labelsTr")
@@ -34,7 +49,6 @@ else:
 
 
 def train(train_loader, valid_loader, name):
-    epochs = 100
     av_train_error = []
     av_train_dice = []
     av_valid_error = []
@@ -47,7 +61,7 @@ def train(train_loader, valid_loader, name):
     loss_BCE = nn.BCELoss()
     save_path = os.path.join(root_dir, "models")
 
-    for epoch in range(epochs):
+    for epoch in range(NUM_EPOCHS):
 
         ##########
         # Train
@@ -142,7 +156,13 @@ def main():
     else:
         device = torch.device('cpu')
 
-    print(device)
+    print("Configuration:")
+    print("Device: ", device)
+    print("SLURM: {}".format(SLURM))
+    print("Model name: {}".format(MODEL_NAME))
+    print("Root dir: {}".format(root_dir))
+    print("Batch size: {}".format(BATCH_SIZE))
+    print("Number of epochs: {}".format(NUM_EPOCHS))
 
     train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, TRAIN_PROP, BATCH_SIZE, NUM_WORKERS)
 

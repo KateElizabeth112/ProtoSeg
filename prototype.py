@@ -5,6 +5,7 @@ import numpy as np
 import pickle as pkl
 import time
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 
 # local imports
 from dataset import create_dataset
@@ -54,31 +55,75 @@ def initialise_prototypes(num_classes, num_prototypes, embedded_dims):
     return prototypes
 
 
+def initialise_classes_and_prototypes(x, num_classes, num_prototypes):
+    # initialse the classes and prototypes by randomly dividing data
+    batch_size = x.shape[0]
+    num_dims = x.shape[1]
+
+    # flatten the batch and pixel dimensions of x
+    x = x.reshape((batch_size, num_dims, -1))   # shape (B, D, N)
+    num_pixels = x.shape[-1]
+
+    # choose indices for each class
+    indices = np.arange(0, num_pixels)
+    num_pxls_per_class = int(np.floor(num_pixels / num_classes))
+
+    # assign prototypes
+    prototypes = np.zeros((num_classes, num_prototypes, num_dims))
+
+    for c in range(num_classes):
+        # select pixels without replacement from list
+        idx = np.random.randint(0, high=indices.shape[0], size=num_pxls_per_class)
+        pxl_idx = indices[idx]
+        indices = np.delete(indices, idx)
+        pxls = x[0, :, pxl_idx]
+
+        # now run k-means to find the prototypes
+        kmeans = KMeans(n_clusters=2, random_state=0).fit(pxls)
+        print(kmeans.cluster_centers_.shape)
+        prototypes[c, :, :] = kmeans.cluster_centers_
+
+    return prototypes
+
+
 def assign_classes(x, p):
     # assign classes to each embedded pixel based on nearest prototype
     batch_size = x.shape[0]
     num_dims = x.shape[1]
-    num_pixels = batch_size *x.shape[2] * x.shape[3]
+    num_pixels = x.shape[2] * x.shape[3]
 
     num_classes = p.shape[0]
     num_prototypes = p.shape[1]
 
     # flatten the pixel dimensions
-    x = np.reshape(x, (batch_size, num_dims, -1))
-
-    print(x.shape)
+    x = np.reshape(x, (batch_size, num_dims, -1))   # shape (B, D, N)
 
     # tile CK times
-    x = np.reshape(np.tile(x, num_prototypes * num_classes), (batch_size, num_dims, num_pixels, -1))
-
-    print(x.shape)
+    x = np.repeat(x[:, :, np.newaxis, :], num_classes * num_prototypes, axis=2)     # shape (B, D, C*K, N)
 
     # tile prototypes to same size as x
-    p = p.swapaxes(0, 1)
-    p = np.reshape(p, (num_dims, -1))
-    p = np.reshape(np.tile(p, num_pixels), (batch_size, num_dims, num_prototypes * num_classes, -1))
+    # prototype shape is (C, K, D)
+    p = p.swapaxes(0, 2)    # shape (D, C, K)
+    p = np.reshape(p, (num_dims, -1))   # shape (D, C*K)
+    p = np.repeat(p[:, :, np.newaxis], num_pixels, axis=2)  # shape (D, C*K, N)
+    p = np.repeat(p[np.newaxis, :, :, :], batch_size, axis=0)   # shape (B, D, C*K, N)
 
-    print(p.shape)
+    # calculate euclidean distance between p and x
+    d = np.power(p - x, 2)
+    d = np.sum(d, axis=1)
+    d = np.power(d, 0.5)        # shape is (B, C*K, N)
+
+    proto_assignments = np.argmin(d, axis=1)
+    class_assignments = np.floor(proto_assignments / num_prototypes)
+
+    return class_assignments
+
+
+def update_prototypes(x, class_assignments, prototypes):
+    # split pixels by class assignment and calculate new prototypes
+
+
+    return prototypes
 
 
 def train(train_loader, valid_loader, name):
@@ -89,7 +134,6 @@ def train(train_loader, valid_loader, name):
     av_valid_dice = []
     eps = []
 
-    prototypes = initialise_prototypes(NUM_CLASSES, NUM_PROTO, EMBEDDED_DIMS)
 
     net = UNet(inChannels=1, outChannels=EMBEDDED_DIMS).to(device).double()
     optimizer = torch.optim.Adam(net.parameters(), lr=3e-4, betas=(0.5, 0.999))
@@ -119,10 +163,13 @@ def train(train_loader, valid_loader, name):
             label = label[:, :, :64, :64].to(device)
             embed = net(data)
 
-            # look at distribution of embedding space
-            embed = embed.detach().numpy()
-            print(embed.shape)
+            # initalise prototypes on first iteration
+            if (epoch == 0) and (i == 0):
+                embed = embed.detach().numpy()
+                prototypes = initialise_classes_and_prototypes(embed, NUM_CLASSES, NUM_PROTO)
 
+            # look at distribution of embedding space
+            print(embed.shape)
             assign_classes(embed, prototypes)
 
             plt.scatter(embed[0, 0, :, :].flatten(), embed[0, 1, :, :].flatten())
@@ -130,7 +177,8 @@ def train(train_loader, valid_loader, name):
                 plt.scatter(prototypes[c, :, 0], prototypes[c, :, 1])
             plt.show()
 
-            # Calculate the distance from each pixel to each prototype
+            # Update prototypes based on class assigmnents
+
 
 
 
