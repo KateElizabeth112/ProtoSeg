@@ -7,9 +7,11 @@ import torch.nn as nn
 def double_conv(in_channels, out_channels, padding=1):
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=padding),
-        nn.ReLU(inplace=True),
+        nn.InstanceNorm2d(num_features=out_channels, affine=True),
+        nn.LeakyReLU(inplace=True),
         nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=padding),
-        nn.ReLU(inplace=True)
+        nn.InstanceNorm2d(num_features=out_channels, affine=True),
+        nn.LeakyReLU(inplace=True)
     )
 
 
