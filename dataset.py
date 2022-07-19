@@ -39,11 +39,11 @@ class BTCVDataset(Dataset):
         lab = np.array(lab.get_fdata())
 
         # Expand the label to 13 channels
-        num_channels = 13
+        num_channels = 14
         lab_full = np.zeros((lab.shape[0], lab.shape[1], num_channels))
 
         for c in range(num_channels):
-            lab_full[:, :, c][lab[:, :, 0] == c + 1] = 1
+            lab_full[:, :, c][lab[:, :, 0] == c] = 1
 
         # swap channels to the first dimension as pytorch expects
         img = torch.tensor(np.swapaxes(img, 0, 2)).double()

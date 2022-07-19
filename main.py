@@ -55,7 +55,7 @@ def train(train_loader, valid_loader, name):
     av_valid_dice = []
     eps = []
 
-    net = UNet(inChannels=1, outChannels=13).to(device).double()
+    net = UNet(inChannels=1, outChannels=14).to(device).double()
     optimizer = torch.optim.Adam(net.parameters(), lr=3e-4, betas=(0.5, 0.999))
     optimizer.zero_grad()
     loss_BCE = nn.BCELoss()
