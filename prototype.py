@@ -79,8 +79,7 @@ def initialise_classes_and_prototypes(x, num_classes, num_prototypes):
         pxls = x[0, :, pxl_idx]
 
         # now run k-means to find the prototypes
-        kmeans = KMeans(n_clusters=2, random_state=0).fit(pxls)
-        print(kmeans.cluster_centers_.shape)
+        kmeans = KMeans(n_clusters=num_prototypes, random_state=0).fit(pxls)
         prototypes[c, :, :] = kmeans.cluster_centers_
 
     return prototypes
@@ -88,42 +87,85 @@ def initialise_classes_and_prototypes(x, num_classes, num_prototypes):
 
 def assign_classes(x, p):
     # assign classes to each embedded pixel based on nearest prototype
-    batch_size = x.shape[0]
-    num_dims = x.shape[1]
-    num_pixels = x.shape[2] * x.shape[3]
+    # x and p are tensors
+    batch_size = x.size()[0]
+    num_dims = x.size()[1]
+    num_pixels = x.size()[2] * x.size()[3]
 
-    num_classes = p.shape[0]
-    num_prototypes = p.shape[1]
+    num_classes = p.size()[0]
+    num_prototypes = p.size()[1]
 
     # flatten the pixel dimensions
-    x = np.reshape(x, (batch_size, num_dims, -1))   # shape (B, D, N)
+    x = torch.reshape(x, (batch_size, num_dims, -1))   # shape (B, D, N)
 
-    # tile CK times
-    x = np.repeat(x[:, :, np.newaxis, :], num_classes * num_prototypes, axis=2)     # shape (B, D, C*K, N)
+    # tile C, K times
+    x = torch.unsqueeze(x, dim=2)   # shape (B, D, 1, N)
+    x = torch.unsqueeze(x, dim=2)   # shape (B, D, 1, 1, N)
+    x = torch.tile(x, (1, 1, num_classes, num_prototypes, 1))     # shape (B, D, C, K, N)
 
     # tile prototypes to same size as x
     # prototype shape is (C, K, D)
-    p = p.swapaxes(0, 2)    # shape (D, C, K)
-    p = np.reshape(p, (num_dims, -1))   # shape (D, C*K)
-    p = np.repeat(p[:, :, np.newaxis], num_pixels, axis=2)  # shape (D, C*K, N)
-    p = np.repeat(p[np.newaxis, :, :, :], batch_size, axis=0)   # shape (B, D, C*K, N)
+    p = p.moveaxis(2, 0)    # shape (D, C, K)
+    p = torch.unsqueeze(p, dim=3)           # shape (D, C, K, 1)
+    p = torch.unsqueeze(p, dim=0)           # shape (1, D, C, K, 1)
+    p = torch.tile(p, (batch_size, 1, 1, 1, num_pixels))  # shape (B, D, C, K, N)
 
-    # calculate euclidean distance between p and x
-    d = np.power(p - x, 2)
-    d = np.sum(d, axis=1)
-    d = np.power(d, 0.5)        # shape is (B, C*K, N)
+    # Calculate cosine distance between p and x
+    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-08)
+    dist = cos(p, x)        # shape (B, C, K, N)
 
-    proto_assignments = np.argmin(d, axis=1)
-    class_assignments = np.floor(proto_assignments / num_prototypes)
+    # find most similar prototype for each class (will be used to calculate loss)
+    (dist_proto_max, dist_proto_argmax) = torch.max(dist, dim=2)     # shape (B, C, N)
 
-    return class_assignments
+    # find most similar class for each pixel
+    dist_class_argmax = torch.argmax(dist_proto_max, dim=1)     # shape is (B, N)
+
+    return dist_class_argmax, dist_proto_max
 
 
 def update_prototypes(x, class_assignments, prototypes):
     # split pixels by class assignment and calculate new prototypes
+    batch_size = x.shape[0]
+    num_dims = x.shape[1]
+    num_classes = prototypes.shape[0]
+    num_prototypes = prototypes.shape[1]
+    prototypes_update = np.zeros(prototypes.shape)
+
+    # flatten x in the pixel dimensions
+    x = np.reshape(x, (batch_size, num_dims, -1))  # shape (B, D, N)
+    x = np.swapaxes(x, 0, 1)       # shape (D, B, N)
+
+    # iterate over classes and update prototypes
+    for c in range(num_classes):
+        # slice x by class c
+        x_class = x[:, class_assignments==c]
+        x_class = np.swapaxes(x_class, 0, 1)
+
+        # update prototypes
+        kmeans = KMeans(n_clusters=num_prototypes, random_state=0).fit(x_class)
+        prototypes_update[c, :, :] = kmeans.cluster_centers_
+
+    return prototypes_update
 
 
-    return prototypes
+def cross_entropy_loss(prototype_similarities, label):
+    # prototype similarities have shape (B, C, N)
+    # label has shape (B, C, N^0.5, N^0,5)
+    batch_size = label.size()[0]
+    num_classes = label.size()[1]
+
+    # reshape label
+    label = torch.reshape(label, (batch_size, num_classes, -1)) # shape (B, C, N)
+
+    # softmax prototype similarities across classes
+    softmax = nn.Softmax(dim=1)
+    prototype_similarities = softmax(prototype_similarities)  # shape (B, C, N)
+
+    # calculate cross entropy loss
+    loss_BCE = nn.BCELoss()
+    L_ce = loss_BCE(label, prototype_similarities)
+
+    return L_ce
 
 
 def train(train_loader, valid_loader, name):
@@ -170,14 +212,19 @@ def train(train_loader, valid_loader, name):
 
             # look at distribution of embedding space
             print(embed.shape)
-            assign_classes(embed, prototypes)
+            class_assignments, prototype_similarities = assign_classes(torch.from_numpy(embed), torch.from_numpy(prototypes))
 
-            plt.scatter(embed[0, 0, :, :].flatten(), embed[0, 1, :, :].flatten())
-            for c in range(NUM_CLASSES):
-                plt.scatter(prototypes[c, :, 0], prototypes[c, :, 1])
-            plt.show()
+            if False:
+                plt.scatter(embed[0, 0, :, :].flatten(), embed[0, 1, :, :].flatten())
+                for c in range(NUM_CLASSES):
+                    plt.scatter(prototypes[c, :, 0], prototypes[c, :, 1])
+                plt.show()
 
             # Update prototypes based on class assigmnents
+            #proto_new = update_prototypes(embed, class_assignments, prototypes)
+
+            # Calculate losses
+            L_ce = cross_entropy_loss(prototype_similarities, label)
 
 
 
