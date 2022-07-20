@@ -11,4 +11,12 @@
 source /vol/biomedic3/kc2322/env/bin/activate
 
 # Run python script
-python3 main.py -m "unet_v3" -b 6 -n 50 -s True
+python3 main.py -m "unet_v4_0" -b 8 -n 50 -s True -f 0
+
+python3 main.py -m "unet_v4_1" -b 8 -n 50 -s True -f 1
+
+python3 main.py -m "unet_v4_2" -b 8 -n 50 -s True -f 2
+
+python3 main.py -m "unet_v4_3" -b 8 -n 50 -s True -f 3
+
+python3 main.py -m "unet_v4_4" -b 8 -n 50 -s True -f 4

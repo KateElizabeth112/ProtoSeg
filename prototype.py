@@ -73,7 +73,7 @@ def initialise_classes_and_prototypes(x, num_classes, num_prototypes):
 
     for c in range(num_classes):
         # select pixels without replacement from list
-        idx = np.random.randint(0, high=indices.shape[0], size=num_pxls_per_class)
+        idx = np.random.choice(range(indices.shape[0]), num_pxls_per_class, replace=False)
         pxl_idx = indices[idx]
         indices = np.delete(indices, idx)
         pxls = x[0, :, pxl_idx]

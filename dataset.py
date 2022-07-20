@@ -52,7 +52,7 @@ class BTCVDataset(Dataset):
         return img, lab_full
 
 
-def create_dataset(root_dir, data_dir, train_prop, batch_size, num_workers):
+def create_dataset(root_dir, data_dir, fold, batch_size, num_workers):
     # Create train and test datasets
 
     # load filenames
@@ -60,20 +60,17 @@ def create_dataset(root_dir, data_dir, train_prop, batch_size, num_workers):
     filenames = pkl.load(f)
     f.close()
 
+    # load folds
+    f = open("fold.pkl", "rb")
+    [train_indices, valid_indices] = pkl.load(f)
+    f.close()
+
     # create a dataset
     dataset = BTCVDataset(root_dir=data_dir, filenames=filenames, train=True)
 
-    # print the length of the dataset
-    ds_len = dataset.__len__()
-    print("Length of dataset ", ds_len)
-
-    # Figure out the number of train and test samples
-    num_train_samples = int(ds_len * train_prop)
-    num_valid_samples = int(ds_len - num_train_samples)
-
     # create train and test datasets
-    train_dataset = Subset(dataset, range(num_train_samples))
-    valid_dataset = Subset(dataset, np.arange(num_train_samples, ds_len))
+    train_dataset = Subset(dataset, train_indices[fold].astype('int'))
+    valid_dataset = Subset(dataset, valid_indices[fold].astype('int'))
 
     print("Number of training samples: {}".format(train_dataset.__len__()))
     print("Number of validation samples: {}".format(valid_dataset.__len__()))

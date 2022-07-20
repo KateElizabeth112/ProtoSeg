@@ -19,6 +19,7 @@ parser.add_argument("-b", "--batch_size", default=2, help="Size of UNet training
 parser.add_argument("-n", "--num_epochs", default=10, help="Number of training epochs.")
 parser.add_argument("-m", "--model_name", default="unet", help="Name of the model to be saved")
 parser.add_argument("-s", "--slurm", default=False, help="Running on SLURM")
+parser.add_argument("-f", "--fold", default=0, help="Fold for cross-validation")
 args = vars(parser.parse_args())
 
 # set up variables
@@ -30,6 +31,7 @@ INIT_LEARNING_RATE = 3e-4
 TRAIN_PROP = 0.8
 MODEL_NAME = args['model_name']
 SLURM = args['slurm']
+FOLD = int(args['fold'])
 
 # Set up directories and filenames
 if SLURM:
@@ -162,9 +164,10 @@ def main():
     print("Model name: {}".format(MODEL_NAME))
     print("Root dir: {}".format(root_dir))
     print("Batch size: {}".format(BATCH_SIZE))
+    print("Fold: {}".format(FOLD))
     print("Number of epochs: {}".format(NUM_EPOCHS))
 
-    train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, TRAIN_PROP, BATCH_SIZE, NUM_WORKERS)
+    train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, FOLD, BATCH_SIZE, NUM_WORKERS)
 
     # Train the network
     train(train_loader, valid_loader, MODEL_NAME)
