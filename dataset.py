@@ -16,8 +16,12 @@ class BTCVDataset(Dataset):
         '''
         # Save the root_dir as a class variable
         self.root_dir = root_dir
-        self.train_imgs = os.path.join(root_dir, "imagesTr")
-        self.train_labels = os.path.join(root_dir, "labelsTr")
+        if train:
+            self.train_imgs = os.path.join(root_dir, "imagesTr")
+            self.train_labels = os.path.join(root_dir, "labelsTr")
+        else:
+            self.train_imgs = os.path.join(root_dir, "imagesTs")
+            self.train_labels = os.path.join(root_dir, "labelsTs")
 
         # Save the filenames in the root_dir as a class variable
         self.filenames = filenames
@@ -108,3 +112,22 @@ def create_dataset(root_dir, data_dir, fold, batch_size, num_workers):
     )
 
     return train_loader, valid_loader, test_loader
+
+
+def create_test_dataset(root_dir, data_dir):
+    f = open(os.path.join(root_dir, "filenames_ts.pkl"), 'rb')
+    filenames_ts = pkl.load(f)
+    f.close()
+
+    # create a dataset
+    test_dataset = BTCVDataset(root_dir=data_dir, filenames=filenames_ts, train=False)
+
+    # Create a data loader
+    test_loader = DataLoader(
+        test_dataset,
+        shuffle=False,
+        batch_size=1,
+        num_workers=1
+    )
+
+    return test_loader
