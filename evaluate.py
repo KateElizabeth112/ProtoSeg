@@ -148,8 +148,8 @@ def main():
     root_dir = '/Users/katecevora/Documents/PhD/data/btcv'
     data_dir = os.path.join(root_dir, 'nnUNet_raw_data_base/nnUNet_raw_data/Task500_BTCV')
     model_path = os.path.join(root_dir, "models")
-    model_name = "unet_v4_1.pt"
-    fold = "1"
+    model_name = "unet_v4_2.pt"
+    fold = "2"
     test_loader = create_test_dataset(root_dir, data_dir)
     evaluate(test_loader, os.path.join(model_path, model_name), fold)
 
