@@ -18,8 +18,9 @@ BATCH_SIZE = 2
 NUM_WORKERS = 2
 INIT_LEARNING_RATE = 3e-4
 TRAIN_PROP = 0.8
+FOLD = 0
 
-NUM_CLASSES = 13      # number of classes
+NUM_CLASSES = 14      # number of classes
 NUM_PROTO = 2           # number of prototypes per class
 EMBEDDED_DIMS = 2       # dimensionality of embedding space
 
@@ -142,6 +143,8 @@ def update_prototypes(x, class_assignments, prototypes):
         x_class = np.swapaxes(x_class, 0, 1)
 
         # update prototypes
+        if np.isnan(x_class.sum()):
+            print("Whoops")
         kmeans = KMeans(n_clusters=num_prototypes, random_state=0).fit(x_class)
         prototypes_update[c, :, :] = kmeans.cluster_centers_
 
@@ -176,7 +179,6 @@ def train(train_loader, valid_loader, name):
     av_valid_dice = []
     eps = []
 
-
     net = UNet(inChannels=1, outChannels=EMBEDDED_DIMS).to(device).double()
     optimizer = torch.optim.Adam(net.parameters(), lr=3e-4, betas=(0.5, 0.999))
     optimizer.zero_grad()
@@ -210,21 +212,31 @@ def train(train_loader, valid_loader, name):
                 embed = embed.detach().numpy()
                 prototypes = initialise_classes_and_prototypes(embed, NUM_CLASSES, NUM_PROTO)
 
-            # look at distribution of embedding space
-            print(embed.shape)
-            class_assignments, prototype_similarities = assign_classes(torch.from_numpy(embed), torch.from_numpy(prototypes))
+                continue
 
-            if False:
-                plt.scatter(embed[0, 0, :, :].flatten(), embed[0, 1, :, :].flatten())
-                for c in range(NUM_CLASSES):
-                    plt.scatter(prototypes[c, :, 0], prototypes[c, :, 1])
-                plt.show()
+            else:
+                # if we already have initialised prototypes, assign classes based on embeddings
+                class_assignments, prototype_similarities = assign_classes(embed, torch.from_numpy(prototypes))
 
-            # Update prototypes based on class assigmnents
-            #proto_new = update_prototypes(embed, class_assignments, prototypes)
+                if False:
+                    # look at distribution of embedding space
+                    plt.scatter(embed[0, 0, :, :].flatten(), embed[0, 1, :, :].flatten())
+                    for c in range(NUM_CLASSES):
+                        plt.scatter(prototypes[c, :, 0], prototypes[c, :, 1])
+                    plt.show()
 
-            # Calculate losses
-            L_ce = cross_entropy_loss(prototype_similarities, label)
+                # Update prototypes based on class assigmnents
+                prototypes = update_prototypes(embed.detach().numpy(), class_assignments, prototypes)
+
+                # Calculate losses
+                L_ce = cross_entropy_loss(prototype_similarities, label)
+                print(L_ce)
+                L_ce.backward()
+                optimizer.step()
+
+                # backpropagate
+
+
 
 
 
@@ -232,7 +244,7 @@ def train(train_loader, valid_loader, name):
 def main():
     print(device)
 
-    train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, TRAIN_PROP, BATCH_SIZE, NUM_WORKERS)
+    train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, FOLD, BATCH_SIZE, NUM_WORKERS)
 
     # Train the network
     model_name = "prototype_v1"
