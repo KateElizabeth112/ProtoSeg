@@ -97,7 +97,6 @@ class UNet(nn.Module):
         deconv1 = self.dconv_up1(deconv1)
         deconv1 = self.dropout(deconv1)
 
-        # out = F.sigmoid(self.conv_last(deconv1))
         out = self.softmax(self.conv_last(deconv1))
 
         return out

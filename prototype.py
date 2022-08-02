@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.nn as nn
+from torch import autograd
 import numpy as np
 import pickle as pkl
 import time
@@ -180,7 +181,8 @@ def train(train_loader, valid_loader, name):
     eps = []
 
     net = UNet(inChannels=1, outChannels=EMBEDDED_DIMS).to(device).double()
-    optimizer = torch.optim.Adam(net.parameters(), lr=3e-4, betas=(0.5, 0.999))
+    #optimizer = torch.optim.Adam(net.parameters(), lr=3e-4, betas=(0.5, 0.999))
+    optimizer = torch.optim.SGD(net.parameters(), lr=1e-5)
     optimizer.zero_grad()
     save_path = os.path.join(root_dir, "models")
 
@@ -199,8 +201,7 @@ def train(train_loader, valid_loader, name):
 
         # iterate over the batches in the training set
         for i, (data, label) in enumerate(train_loader):
-            if i % 50 == 0:
-                print("Epoch {}, batch {}".format(epoch, i))
+            print("Epoch {}, batch {}".format(epoch, i))
 
             optimizer.zero_grad()
             data = data[:, :, :64, :64].to(device)
@@ -231,10 +232,15 @@ def train(train_loader, valid_loader, name):
                 # Calculate losses
                 L_ce = cross_entropy_loss(prototype_similarities, label)
                 print(L_ce)
-                L_ce.backward()
+                with autograd.detect_anomaly():
+                    L_ce.backward()
                 optimizer.step()
 
-                # backpropagate
+                # Check for NaNs
+                for name, param in net.named_parameters():
+                    if not(torch.isfinite(param.grad).all()):
+                        print(name, torch.isfinite(param.grad).all())
+                        break
 
 
 
