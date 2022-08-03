@@ -84,9 +84,9 @@ def loss_PPC(embed, probs):
     C = classes_present.size()[0]
 
     # create empty tensors to fill with positive and negative prototypes
-    positive_prototypes = torch.empty((D, N), dtype=torch.double)
-    negative_prototypes = torch.empty((D, C-1, N))
-    prototypes = torch.empty((D, C))
+    positive_prototypes = torch.empty((D, N), dtype=torch.double).to(device)
+    negative_prototypes = torch.empty((D, C-1, N)).to(device)
+    prototypes = torch.empty((D, C)).to(device)
 
     Ncs = []
 
