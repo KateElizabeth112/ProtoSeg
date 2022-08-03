@@ -4,7 +4,7 @@
 #SBATCH -p gpushigh # Partition (queue)
 #SBATCH --gres gpu:1 # gpu:n, where n = number of GPUs
 #SBATCH --mem 20G # memory pool for all cores
-#SBATCH --nodelist monal04 # SLURM node
+#SBATCH --nodelist monal03 # SLURM node
 #SBATCH --output=slurm.%N.%j.log # Standard output and error log
 
 # Source virtual environment (pip)
