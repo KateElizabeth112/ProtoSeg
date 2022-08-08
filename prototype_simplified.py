@@ -170,11 +170,10 @@ def train(train_loader, valid_loader, name, model_path):
 
         # iterate over the batches in the training set
         for i, (data, label) in enumerate(train_loader):
-            print("Epoch {}, batch {}".format(epoch, i))
+            if i % 50 == 0:
+                print("Epoch {}, batch {}".format(epoch, i))
 
             optimizer.zero_grad()
-            #data = data[:, :, :64, :64].to(device)
-            #label = label[:, :, :64, :64].to(device)
 
             data = data.to(device)
             label = label.to(device)
