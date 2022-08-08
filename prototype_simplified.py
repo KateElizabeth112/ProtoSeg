@@ -170,7 +170,7 @@ def train(train_loader, valid_loader, name, model_path):
 
         # iterate over the batches in the training set
         for i, (data, label) in enumerate(train_loader):
-            if i % 50 == 0:
+            if i % 10 == 0:
                 print("Epoch {}, batch {}".format(epoch, i))
 
             optimizer.zero_grad()
@@ -192,7 +192,8 @@ def train(train_loader, valid_loader, name, model_path):
             err.backward()
             optimizer.step()
 
-            #print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
+            if i % 10 == 0:
+                print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
 
             # append to the batch errors
             batch_train_error.append(err.item())
@@ -216,6 +217,9 @@ def train(train_loader, valid_loader, name, model_path):
         print("Running evaluation.....")
         net.eval()
         for i, (data, label) in enumerate(valid_loader):
+            if i % 10 == 0:
+                print("Epoch {}, batch {}".format(epoch, i))
+
             data = data.to(device)
             label = label.to(device)
 
@@ -229,6 +233,9 @@ def train(train_loader, valid_loader, name, model_path):
             L_ppc = loss_PPC(embed, probs)
 
             err = L_ppc + L_ce
+
+            if i % 10 == 0:
+                print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
 
             batch_valid_error.append(err.item())
             batch_valid_ppc.append(L_ppc.item())
