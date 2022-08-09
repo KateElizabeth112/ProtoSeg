@@ -135,7 +135,6 @@ def loss_PPC(embed, probs):
 
 
 def train(train_loader, valid_loader, name, model_path):
-    epochs = 1
     av_train_error = []
     av_train_ppc = []
     av_valid_error = []
@@ -155,7 +154,7 @@ def train(train_loader, valid_loader, name, model_path):
 
     save_path = os.path.join(root_dir, "models")
 
-    for epoch in range(epochs):
+    for epoch in range(NUM_EPOCHS):
 
         ##########
         # Train
@@ -192,8 +191,8 @@ def train(train_loader, valid_loader, name, model_path):
             err.backward()
             optimizer.step()
 
-            if i % 10 == 0:
-                print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
+            #if i % 10 == 0:
+            #    print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
 
             # append to the batch errors
             batch_train_error.append(err.item())
@@ -234,8 +233,8 @@ def train(train_loader, valid_loader, name, model_path):
 
             err = L_ppc + L_ce
 
-            if i % 10 == 0:
-                print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
+            #if i % 10 == 0:
+            #    print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))
 
             batch_valid_error.append(err.item())
             batch_valid_ppc.append(L_ppc.item())
@@ -274,6 +273,8 @@ def main():
     train_loader, valid_loader, test_loader = create_dataset(root_dir, data_dir, FOLD, BATCH_SIZE, NUM_WORKERS)
 
     train(train_loader, valid_loader, MODEL_NAME, base_model_path)
+
+    print("Done")
 
 
 if __name__ == '__main__':
