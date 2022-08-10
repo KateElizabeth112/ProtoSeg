@@ -3,7 +3,7 @@ import os
 import pickle as pkl
 
 def main():
-    name = "unet_v4_1_losses.pkl"
+    name = "prototype_v1_0_losses.pkl"
 
     f = open(os.path.join("/Users/katecevora/Documents/PhD/losses", name), "rb")
     [eps, av_train_error, av_train_dice, av_valid_error, av_valid_dice] = pkl.load(f)
