@@ -9,6 +9,7 @@ import argparse
 # local imports
 from dataset import create_dataset
 from UNet import UNet
+from loss import dice_coeff
 
 # NOTATION
 # D is the dimensionality of the embedding space
@@ -181,13 +182,15 @@ def train(train_loader, valid_loader, name, model_path):
             embed, probs = net(data)
 
             # calculate the cross-entropy loss between predicted class probabilities and labels
-            L_ce = loss_BCE(probs, label)
+            #L_ce = loss_BCE(probs, label)
+            L_dc = - dice_coeff(probs, label)
 
             # calculate pixel-prototype contrastive loss
             L_ppc = loss_PPC(embed, probs)
 
             # Add losses and backpropagate to update network params
-            err = L_ce + L_ppc
+            #err = L_ce + L_ppc
+            err = L_dc + L_ppc
             err.backward()
             optimizer.step()
 
@@ -226,12 +229,14 @@ def train(train_loader, valid_loader, name, model_path):
             embed, probs = net(data)
 
             # calculate the cross-entropy loss between predicted class probabilities and labels
-            L_ce = loss_BCE(probs, label)
+            #L_ce = loss_BCE(probs, label)
+            L_dc = - dice_coeff(probs, label)
 
             # calculate pixel-prototype contrastive loss
             L_ppc = loss_PPC(embed, probs)
 
-            err = L_ppc + L_ce
+            # err = L_ppc + L_ce
+            err = L_dc + L_ppc
 
             #if i % 10 == 0:
             #    print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))

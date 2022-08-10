@@ -4,8 +4,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pickle as pkl
-import time
-import matplotlib.pyplot as plt
 
 # local imports
 from dataset import create_dataset
