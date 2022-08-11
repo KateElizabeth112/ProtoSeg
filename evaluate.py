@@ -23,8 +23,8 @@ else:
     output_folder = "/Users/katecevora/Documents/PhD/data/btcv/Images/UNet/Test"
 data_dir = os.path.join(root_dir, 'nnUNet_raw_data_base/nnUNet_raw_data/Task500_BTCV')
 model_path = os.path.join(root_dir, "models")
-model_name = "prototype_v1_0.pt"
-fold = "0"
+model_name = "prototype_v2_0.pt"
+fold = "1"
 
 organs_dict = {0: "background",
                1: "spleen",
@@ -273,10 +273,10 @@ def evaluate_nnUNet():
 
 
 def main():
-    #test_loader = create_test_dataset(root_dir, data_dir)
-    #evaluate(test_loader, os.path.join(model_path, model_name), fold)
+    test_loader = create_test_dataset(root_dir, data_dir)
+    evaluate(test_loader, os.path.join(model_path, model_name), fold)
 
-    evaluate_nnUNet()
+    #evaluate_nnUNet()
 
 if __name__ == "__main__":
     main()
