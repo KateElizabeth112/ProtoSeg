@@ -11,9 +11,10 @@ from dataset import create_test_dataset
 from plotting import PlotOverlay2D
 from monai.metrics import compute_surface_dice
 import nibabel as nib
+from sklearn.decomposition import PCA
 
 DEBUG = False
-MAKE_PLOTS = True
+MAKE_PLOTS = False
 PROTO = True
 
 root_dir = '/Users/katecevora/Documents/PhD/data/btcv'
@@ -40,6 +41,9 @@ organs_dict = {0: "background",
                11: "pancreas",
                12: "right adrenal gland",
                13: "left adrenal gland"}
+
+colors = ["#ffa07a", "#663d61", "#ed90e1", "#008b45", "#0f52ba", "#fa8072", "#15f4ee", "#4cbb17", "#fdff00", "#ff1493",
+          "#9400d3", "#00ced1", "#d63a0f", "#3fff00"]
 
 
 def get_surface_dice(y_pred, y, class_thresholds):
@@ -83,7 +87,7 @@ def evaluate(test_loader, model_path, fold):
     nsd_all.fill(np.nan)
 
     for j, (data, lab) in enumerate(test_loader):
-        pred, _ = net(data.to(device))
+        pred, embed = net(data.to(device))
         dice = get_dice_per_class(pred, lab.to(device)).cpu().detach().numpy()
         nsd = get_surface_dice(pred, lab.to(device), [1.5 for i in range(14)])
 
@@ -96,6 +100,24 @@ def evaluate(test_loader, model_path, fold):
         path = os.path.join(output_folder, fold, name)
         if not os.path.exists(path):
             os.makedirs(path)
+
+        if PROTO:
+            # inspect the data in two dimensions
+            num_classes = embed.shape[1]
+            embed = embed.cpu().detach().numpy()
+            embed = np.squeeze(embed)
+            embed_flat = np.reshape(embed, (num_classes, -1))
+            embed_flat = np.swapaxes(embed_flat, 0, 1)
+            lab_flat = np.squeeze(lab)
+            lab_flat = np.reshape(lab_flat, (num_classes, -1))
+            pca = PCA(n_components=2)
+            y = pca.fit_transform(embed_flat)
+
+            plt.clf()
+            for i in range(num_classes):
+                if np.sum(lab_flat[i, :] > 0):
+                    plt.scatter(y[lab_flat[i, :]==1, 0], y[lab_flat[i, :]==1, 1], marker='x', color=colors[i])
+            plt.savefig(os.path.join(path, "embedding.png"))
 
         print("Processing {}".format(name))
 

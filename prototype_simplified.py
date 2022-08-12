@@ -40,6 +40,7 @@ TRAIN_PROP = 0.8
 MODEL_NAME = args['model_name']
 SLURM = args['slurm']
 FOLD = int(args['fold'])
+LAMBDA = 0.1
 
 # Set up directories and filenames
 if SLURM:
@@ -190,8 +191,7 @@ def train(train_loader, valid_loader, name, model_path):
 
             # Add losses and backpropagate to update network params
             #err = L_ce + L_ppc
-            #err = L_dc + L_ppc
-            err = L_dc
+            err = L_dc + LAMBDA * L_ppc
             err.backward()
             optimizer.step()
 
@@ -237,8 +237,7 @@ def train(train_loader, valid_loader, name, model_path):
             L_ppc = loss_PPC(embed, probs)
 
             # err = L_ppc + L_ce
-            #err = L_dc + L_ppc
-            err = L_dc
+            err = L_dc + LAMBDA * L_ppc
 
             #if i % 10 == 0:
             #    print("L_ce: {}, L_ppc: {}, L: {}".format(L_ce.item(), L_ppc.item(), err.item()))

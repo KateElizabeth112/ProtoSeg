@@ -11,4 +11,4 @@
 source /vol/biomedic3/kc2322/env/bin/activate
 
 # Run python script
-python3 prototype_simplified.py -m "prototype_v3_0" -b 2 -n 50 -s True -f 0
+python3 prototype_simplified.py -m "prototype_v4_0" -b 2 -n 50 -s True -f 0
