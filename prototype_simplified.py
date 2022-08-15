@@ -40,7 +40,7 @@ TRAIN_PROP = 0.8
 MODEL_NAME = args['model_name']
 SLURM = args['slurm']
 FOLD = int(args['fold'])
-LAMBDA = 0.1
+LAMBDA = 0.5
 
 # Set up directories and filenames
 if SLURM:
@@ -226,7 +226,7 @@ def train(train_loader, valid_loader, name, model_path):
             data = data.to(device)
             label = label.to(device)
 
-            # get the embedded representations and the predicted class probabilities
+            # 1get the embedded representations and the predicted class probabilities
             embed, probs = net(data)
 
             # calculate the cross-entropy loss between predicted class probabilities and labels

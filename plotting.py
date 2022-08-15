@@ -35,3 +35,23 @@ def PlotOverlay2D(img, pred, gt, max, alpha=0.5, c='gray', save=False, path=""):
         plt.savefig(os.path.join(path, "overlay.png"))
     else:
         plt.show()
+
+
+def main():
+    import matplotlib.path as mpath
+    import matplotlib.lines as mlines
+    import matplotlib.patches as mpatches
+    from matplotlib.collections import PatchCollection
+
+    cmap = plt.cm.get_cmap('jet')
+    num = 4
+    max = 14
+    rgba = cmap(num / max)
+
+    print(rgba)
+
+    plt.scatter([0, 1], [0, 1], color=rgba)
+    plt.show()
+
+if __name__ == "__main__":
+    main()

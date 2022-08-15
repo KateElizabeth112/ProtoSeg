@@ -14,7 +14,7 @@ import nibabel as nib
 from sklearn.decomposition import PCA
 
 DEBUG = False
-MAKE_PLOTS = False
+MAKE_PLOTS = True
 PROTO = True
 
 root_dir = '/Users/katecevora/Documents/PhD/data/btcv'
@@ -24,8 +24,8 @@ else:
     output_folder = "/Users/katecevora/Documents/PhD/data/btcv/Images/UNet/Test"
 data_dir = os.path.join(root_dir, 'nnUNet_raw_data_base/nnUNet_raw_data/Task500_BTCV')
 model_path = os.path.join(root_dir, "models")
-model_name = "prototype_v2_0.pt"
-fold = "1"
+model_name = "prototype_v3_0.pt"
+fold = "3"
 
 organs_dict = {0: "background",
                1: "spleen",
@@ -87,11 +87,17 @@ def evaluate(test_loader, model_path, fold):
     nsd_all.fill(np.nan)
 
     for j, (data, lab) in enumerate(test_loader):
-        pred, embed = net(data.to(device))
-        dice = get_dice_per_class(pred, lab.to(device)).cpu().detach().numpy()
-        nsd = get_surface_dice(pred, lab.to(device), [1.5 for i in range(14)])
+        pred, embed = net(data.to(device))  # shape (B, C, H, W)
+        # convert preds to one-hot so it's comparable with output from nnU-Net
+        max_idx = torch.argmax(pred, 1, keepdim=True)
+        one_hot = torch.FloatTensor(pred.shape)
+        one_hot.zero_()
+        one_hot.scatter_(1, max_idx, 1)
 
-        pred = pred.cpu().detach().numpy()
+        dice = get_dice_per_class(one_hot, lab.to(device)).cpu().detach().numpy()
+        nsd = get_surface_dice(one_hot, lab.to(device), [1.5 for i in range(14)])
+
+        pred = one_hot.cpu().detach().numpy()
         lab = lab.cpu().detach().numpy()
         img = data.cpu().detach().numpy()
 
@@ -101,7 +107,7 @@ def evaluate(test_loader, model_path, fold):
         if not os.path.exists(path):
             os.makedirs(path)
 
-        if PROTO:
+        if MAKE_PLOTS:
             # inspect the data in two dimensions
             num_classes = embed.shape[1]
             embed = embed.cpu().detach().numpy()
@@ -136,7 +142,7 @@ def evaluate(test_loader, model_path, fold):
 
             # Look at the different channels of the prediction
             for i in range(pred.shape[1]):
-                pred_channel = pred[0, i, :, :]
+                pred_channel = one_hot[0, i, :, :]
                 lab_channel = lab[0, i, :, :]
 
                 plt.figure(figsize=(10, 3))

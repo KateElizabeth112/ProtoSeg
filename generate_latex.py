@@ -39,7 +39,7 @@ def print_results():
     (nn_av_dice, nn_std_dice) = nnunet_results_dict["Average Dice"]
     (nn_av_nsd, nn_std_nsd) = nnunet_results_dict["Average Distance"]
 
-    f = open(os.path.join(proto_res_folder, str(0), "results_dict.pkl"), "rb")
+    f = open(os.path.join(proto_res_folder, str(2), "results_dict.pkl"), "rb")
     proto_results_dict = pkl.load(f)
     f.close()
 
